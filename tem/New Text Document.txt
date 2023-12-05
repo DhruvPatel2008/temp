@@ -1,1 +1,282 @@
-sfadfdsfa
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Todolist.Models;
+
+namespace Todolist.Controllers
+{
+    public class CarController : Controller
+    {
+        private readonly CarContext _context;
+
+        public CarController(CarContext context)
+        {
+            _context = context;
+        }
+
+
+
+
+
+        public async Task<IActionResult> Index()
+        {
+            var genreQuery = _context.Car.Select(s => s.Make).Distinct();
+            var viewModel = new CarsViewModelView
+            {
+                Models = new SelectList(await genreQuery.ToListAsync()),
+                Cars = await _context.Car.Where(s => !s.IsHidden).ToListAsync()
+            };
+
+            return View(viewModel);
+        }
+
+
+
+
+
+
+        // GET: Car/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var car = await _context.Car
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (car == null)
+            {
+                return View("NotFound");
+            }
+
+            return View(car);
+        }
+
+        // GET: Car/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Car/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Id,Make,Model,Year,EngineSize,Horsepower,Price")] Car car)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Add(car);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            return View(car);
+        }
+
+        // GET: Car/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var car = await _context.Car.FindAsync(id);
+            if (car == null)
+            {
+                return NotFound();
+            }
+            return View(car);
+        }
+
+        // POST: Car/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Make,Model,Year,EngineSize,Horsepower,Price")] Car car)
+        {
+            if (id != car.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(car);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!CarExists(car.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(car);
+        }
+
+        // GET: Car/Delete/5
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var car = await _context.Car
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (car == null)
+            {
+                return NotFound();
+            }
+
+            return View(car);
+        }
+
+        // POST: Car/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var car = await _context.Car.FindAsync(id);
+            _context.Car.Remove(car);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool CarExists(int id)
+        {
+            return _context.Car.Any(e => e.Id == id);
+        }
+
+
+        public async Task<IActionResult> Search(string searchString, string dateSearch, string priceSearchString, string CarsGenre)
+        {
+
+            IQueryable<string> genreQuery = from m in _context.Car
+                                            select m.Color;
+
+
+            var cars = from m in _context.Car
+                       select m;
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                cars = cars.Where(s => s.Color!.ToLower().Contains(searchString.ToLower()));
+            }
+            if (!string.IsNullOrEmpty(dateSearch) && DateTime.TryParse(dateSearch, out DateTime dateFilter))
+            {
+                cars = cars.Where(s => s.ReleaseDate.Date == dateFilter.Date);
+            }
+
+            if (!string.IsNullOrEmpty(priceSearchString) && decimal.TryParse(priceSearchString, out decimal priceFilter))
+            {
+                cars = cars.Where(s => s.Price == priceFilter);
+            }
+
+            if (!string.IsNullOrEmpty(CarsGenre))
+            {
+                cars = cars.Where(x => x.Model == CarsGenre);
+            }
+
+            ViewData["SearchGenre"] = CarsGenre;
+
+
+
+            var CarGenreVM = new CarsViewModelView
+            {
+                Models = new SelectList(await genreQuery.Distinct().ToListAsync()),
+                Cars = await cars.ToListAsync()
+            };
+
+            return View("Index", CarGenreVM);
+        }
+
+
+
+
+
+        public async Task<IActionResult> DeleteAll()
+        {
+            return View();
+        }
+
+        // POST: Movies/DeleteAll
+        [HttpPost, ActionName("DeleteAll")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmedAll()
+        {
+            var allCars = _context.Car.ToList();
+            if (allCars.Count > 0)
+            {
+                _context.Car.RemoveRange(allCars);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+
+        }
+
+        public async Task<IActionResult> Hidden(int[] selectedCars)
+        {
+            foreach (var CarId in selectedCars)
+            {
+                var Car = await _context.Car.FindAsync(CarId);
+                if (Car != null)
+                {
+                    Car.IsHidden = !Car.IsHidden;
+                    _context.Update(Car);
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> HiddenRecords()
+        {
+            var viewModel = new CarsViewModelView
+            {
+                Cars = await _context.Car.Where(s => s.IsHidden).ToListAsync()
+            };
+
+            return View(viewModel);
+        }
+
+
+        public async Task<IActionResult> DeleteHidden()
+        {
+            var hiddenCars = await _context.Car.Where(s => s.IsHidden).ToListAsync();
+
+            foreach (var Car in hiddenCars)
+            {
+                Car.IsHidden = false;
+            }
+
+            await _context.SaveChangesAsync();
+
+
+            return RedirectToAction("HiddenRecords");
+        }
+
+
+
+    }
+
+
+
+}
