@@ -24,7 +24,7 @@ namespace Todolist.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var genreQuery = _context.Car.Select(s => s.Make).Distinct();
+            var genreQuery = _context.Car.Select(s => s.Model).Distinct();
             var viewModel = new CarsViewModelView
             {
                 Models = new SelectList(await genreQuery.ToListAsync()),
@@ -165,11 +165,12 @@ namespace Todolist.Controllers
         }
 
 
-        public async Task<IActionResult> Search(string searchString, string dateSearch, string priceSearchString, string CarsGenre)
+        public async Task<IActionResult> Search(string searchString, string dateSearch, string priceSearchString, string CarModels, string colorFilter)
+
         {
 
             IQueryable<string> genreQuery = from m in _context.Car
-                                            select m.Color;
+                                            select m.Model;
 
 
             var cars = from m in _context.Car
@@ -179,6 +180,7 @@ namespace Todolist.Controllers
             {
                 cars = cars.Where(s => s.Color!.ToLower().Contains(searchString.ToLower()));
             }
+
             if (!string.IsNullOrEmpty(dateSearch) && DateTime.TryParse(dateSearch, out DateTime dateFilter))
             {
                 cars = cars.Where(s => s.ReleaseDate.Date == dateFilter.Date);
@@ -189,12 +191,12 @@ namespace Todolist.Controllers
                 cars = cars.Where(s => s.Price == priceFilter);
             }
 
-            if (!string.IsNullOrEmpty(CarsGenre))
+            if (!string.IsNullOrEmpty(CarModels))
             {
-                cars = cars.Where(x => x.Model == CarsGenre);
+                cars = cars.Where(x => x.Model == CarModels);
             }
 
-            ViewData["SearchGenre"] = CarsGenre;
+            ViewData["SearchGenre"] = CarModels;
 
 
 
@@ -232,11 +234,12 @@ namespace Todolist.Controllers
 
         }
 
-        public async Task<IActionResult> Hidden(int[] selectedCars)
+       
+public async Task<IActionResult> Hidden(int[] selectedCars)
         {
-            foreach (var CarId in selectedCars)
+            foreach (var songId in selectedCars)
             {
-                var Car = await _context.Car.FindAsync(CarId);
+                var Car = await _context.Car.FindAsync(songId);
                 if (Car != null)
                 {
                     Car.IsHidden = !Car.IsHidden;
@@ -256,15 +259,13 @@ namespace Todolist.Controllers
 
             return View(viewModel);
         }
-
-
-        public async Task<IActionResult> DeleteHidden()
+public async Task<IActionResult> DeleteHidden()
         {
             var hiddenCars = await _context.Car.Where(s => s.IsHidden).ToListAsync();
 
-            foreach (var Car in hiddenCars)
+            foreach (var song in hiddenCars)
             {
-                Car.IsHidden = false;
+                song.IsHidden = false;
             }
 
             await _context.SaveChangesAsync();
@@ -272,8 +273,6 @@ namespace Todolist.Controllers
 
             return RedirectToAction("HiddenRecords");
         }
-
-
 
     }
 
