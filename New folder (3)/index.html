@@ -1,30 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat Breeds Information</title>
-    <link rel="stylesheet" href="styles.css">
+  <title>Cat Breeds</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-    <div id="catBreedTableContainer">
-        <table id="catBreedTable">
-            <thead>
-                <!-- Headers will be dynamically inserted here -->
-            </thead>
-            <tbody>
-                <!-- Cat breed data will be dynamically inserted here -->
-            </tbody>
-        </table>
-    </div>
-    <textarea id="searchBar" placeholder="Search for breeds or countries..."></textarea>
-    <div id="errorMessage"></div>
-    <button id="filterUS">United States</button>
-    <button id="filterOther">Other</button>
-    <div id="accordionContainer">
-        <!-- Accordions will be dynamically inserted here -->
-    </div>
 
-    <script src="script.js"></script>
+  <h1>Cat Breeds</h1>
+  
+  <div id="accordions"></div>
+  
+  <table id="catTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Breed</th> 
+        <th onclick="sortTable(1)">Origin</th>
+        <th onclick="sortTable(2)">Coat</th>
+        <th onclick="sortTable(3)">Pattern</th>
+      </tr>
+    </thead>
+    <tbody id="catBody">
+    </tbody>
+  </table>
+
+  <div>
+    <input type="text" id="search" placeholder="Search breeds and countries"> 
+  </div>
+
+  <div>
+    <button onclick="filterTable('United States')">US Breeds</button>
+    <button onclick="filterTable('Other')">Other Breeds</button> 
+  </div>
+
 </body>
 </html>
